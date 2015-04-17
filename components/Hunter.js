@@ -192,8 +192,8 @@ function handleGameEnd (gameState) {
     currentHunt.decision = getOppositeBetArea(currentHunt.betArea);
     currentHunt.result = 'L';
 
-    // Lost a strike bet but the last one was not a strike bet
-    if (currentHunt.mode === 'T' && (!previousHunt || previousHunt.mode !== 'T')) {
+    // Lost a strike bet but the last one was not a strike bet orr performance bet (so it was counterstrike bet)
+    if (currentHunt.mode === 'T' && ((previousHunt && previousHunt.mode === 'C') || !previousHunt)){
       //Raise strike bet and try again
       this.mode = 'T';
       this.betLevel = currentHunt.betLevel + 1;
@@ -202,7 +202,7 @@ function handleGameEnd (gameState) {
     }
 
     // Lost a strike bet and the last one was also a strike bet or performance bet
-    else if (currentHunt.mode === 'T' && (previousHunt.mode === 'T' || previousHunt.mode === 'R')) {
+    else if (currentHunt.mode === 'T' && (previousHunt && previousHunt.mode === 'T' || previousHunt.mode === 'R')) {
       // Go into level 1 counterstrike betting
       this.mode = 'C';
       this.betLevel = 1;

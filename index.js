@@ -5,7 +5,7 @@ var AsciiTable = require('ascii-table')
 var hunterArr = [];
 
 
-var TOTAL = 5000;
+var TOTAL = 10000;
 
 ///-----  SINGLE HUNTER
 
@@ -38,7 +38,7 @@ for (var i = 0; i < TOTAL; i++) {
       bankroll: 220,
       stopGap: 180,
       goal: 20,
-      deviation: 0.2,
+      deviation: 0.4,
       maxRounds: 64
     });
 
