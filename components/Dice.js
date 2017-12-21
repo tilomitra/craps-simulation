@@ -1,16 +1,18 @@
-var Dice = function () {
+var Chance = require("chance");
+var chance = new Chance();
+
+var Dice = function() {
   this.roll();
 };
 
-
-Dice.prototype.roll = function () {
-  var value = 1 + Math.floor(Math.random() * 6);
-  this.value = value;
+Dice.prototype.roll = function() {
+  const val = chance.d6();
+  this.value = val;
   return this.value;
-}
+};
 
-Dice.prototype.getValue = function () {
+Dice.prototype.getValue = function() {
   return this.value;
-}
+};
 
 module.exports = Dice;

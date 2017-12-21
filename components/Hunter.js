@@ -11,7 +11,7 @@ var MODES = {
   T: [2,4,6,10,16,26,42,68],
   C: [2,4,8,16,32,64,128],
   R: [3,2,4,6,8,10,12,15,20,25,30,35,40,45,50,55,60]
-}
+};
 
 //---- $3 Table
 // var MODES = {
@@ -20,6 +20,14 @@ var MODES = {
 //   R: [4,3,6,8,10,12,15,20,25,30,35,40,45]
 // }
 
+
+//---- $5 Table
+
+// var MODES = {
+//   T: [5,10,15,25,40,65,105,170],
+//   C: [5,10,20,40,80,160],
+//   R: [8,7,9,12,15,18,25,30,35,40,45,50,55,60]
+// }
 
 
 var Hunter = function (initialState) {
@@ -163,7 +171,7 @@ function handleGameEnd (gameState) {
     else if (currentHunt.mode === 'C') {
       this.mode = 'T';
 
-      if (currentHunt.bankroll < 3 && currentHunt.bankroll > -3) {
+      if (currentHunt.bankroll < 5 && currentHunt.bankroll > -5) {
         this.betLevel = 1;
       }
 
@@ -261,6 +269,15 @@ function handleGameEnd (gameState) {
     });
   }
 
+  // If the next bet is going to make you go over the stop loss, then stop.
+  else if (currentHunt.bankroll - MODES[this.mode][this.betArea] <= 50) {
+    this.emit('end', {
+      status: 'lose',
+      history: this.huntHistory,
+      lastState: _.last(this.huntHistory)
+    });
+  }
+
   // If max-rounds played, stop.
   else if (currentHunt.round === this.maxRounds) {
     this.emit('end', {
@@ -287,7 +304,7 @@ function handleGameEnd (gameState) {
 
 
 function handleHunterEnd (e) {
-  //console.log(this.table.toString());
+  console.log(this.table.toString());
 }
 
 
