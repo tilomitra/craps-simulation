@@ -1,17 +1,17 @@
-var util = require('util');
-var _    = require('underscore');
-var EventEmitter = require('events').EventEmitter;
-var Game = require('./Game');
+var util = require("util");
+var _ = require("underscore");
+var EventEmitter = require("events").EventEmitter;
+var Game = require("./Game");
 
-var AsciiTable = require('ascii-table')
+var AsciiTable = require("ascii-table");
 
 //---- $2 Table
 
-var MODES = {
-  T: [2,4,6,10,16,26,42,68],
-  C: [2,4,8,16,32,64,128],
-  R: [3,2,4,6,8,10,12,15,20,25,30,35,40,45,50,55,60]
-};
+// var MODES = {
+//   T: [2, 4, 6, 10, 16, 26, 42, 68],
+//   C: [2, 4, 8, 16, 32, 64, 128],
+//   R: [3, 2, 4, 6, 8, 10, 12, 15, 20, 25, 30, 35, 40, 45, 50, 55, 60]
+// };
 
 //---- $3 Table
 // var MODES = {
@@ -20,24 +20,22 @@ var MODES = {
 //   R: [4,3,6,8,10,12,15,20,25,30,35,40,45]
 // }
 
-
 //---- $5 Table
 
-// var MODES = {
-//   T: [5,10,15,25,40,65,105,170],
-//   C: [5,10,20,40,80,160],
-//   R: [8,7,9,12,15,18,25,30,35,40,45,50,55,60]
-// }
+var MODES = {
+  T: [5, 10, 15, 25, 40, 55, 85, 130],
+  C: [5, 10, 20, 40, 80, 160],
+  R: [8, 7, 9, 12, 15, 18, 25, 30, 35, 40, 45, 50, 55, 60]
+};
 
-
-var Hunter = function (initialState) {
+var Hunter = function(initialState) {
   EventEmitter.call(this);
 
-  this.table = new AsciiTable('HUNTER');
+  this.table = new AsciiTable("HUNTER");
   this.round = 0;
-  this.mode = initialState.mode || 'T';
-  this.pattern = initialState.pattern || 'S';
-  this.betArea = initialState.betArea || 'P';
+  this.mode = initialState.mode || "T";
+  this.pattern = initialState.pattern || "S";
+  this.betArea = initialState.betArea || "P";
   this.betLevel = initialState.betLevel || 1;
   this.startingAmount = initialState.bankroll || 180;
   this.bankroll = this.startingAmount;
@@ -53,30 +51,38 @@ var Hunter = function (initialState) {
 
   this.game = null;
 
-
   //METHODS
   this.hunt = hunt;
   this.handleGameEnd = handleGameEnd;
   this.handleHunterEnd = handleHunterEnd;
-  this.on('end', this.handleHunterEnd);
+  this.on("end", this.handleHunterEnd);
 
-  this.table.setHeading('Rnd', 'Dcsn', 'Mode', 'Pattern', 'BetArea', 'BetAmt', 'BetLvl', 'Result', 'Balance', 'Cash on hand');
+  this.table.setHeading(
+    "Rnd",
+    "Dcsn",
+    "Mode",
+    "Pattern",
+    "BetArea",
+    "BetAmt",
+    "BetLvl",
+    "Result",
+    "Balance",
+    "Cash on hand"
+  );
 };
 
-
-function hunt () {
+function hunt() {
   var betArea = this.betArea;
   var betAmount;
   var state;
 
   if (!MODES[this.mode][this.betLevel - 1]) {
-    this.emit('end', {
-      status: 'lose',
+    this.emit("end", {
+      status: "lose",
       history: this.huntHistory,
       lastState: _.last(this.huntHistory)
     });
-  }
-  else {
+  } else {
     betAmount = MODES[this.mode][this.betLevel - 1];
 
     //increment round
@@ -90,7 +96,7 @@ function hunt () {
       betAmount: betAmount,
       betLevel: this.betLevel,
       bankroll: this.bankroll
-    }
+    };
 
     this.currentHunt = state;
 
@@ -100,140 +106,150 @@ function hunt () {
     });
 
     var boundHandleGameEnd = this.handleGameEnd.bind(this);
-    this.game.on('end', boundHandleGameEnd);
+    this.game.on("end", boundHandleGameEnd);
 
     var self = this;
-    setImmediate(function () {
+    setImmediate(function() {
       self.game.roll();
     });
-
-
   }
-
 }
 
-
-function handleGameEnd (gameState) {
+function handleGameEnd(gameState) {
   var betArea = this.betArea,
-      mode = this.mode,
-      pattern = this.pattern,
-      currentHunt = this.currentHunt,
-      previousHunt = this.huntHistory[this.huntHistory.length - 1],
-      secondPreviousHunt = this.huntHistory[this.huntHistory.length - 2],
-      lastLosingStrikeHunt;
+    mode = this.mode,
+    pattern = this.pattern,
+    currentHunt = this.currentHunt,
+    previousHunt = this.huntHistory[this.huntHistory.length - 1],
+    secondPreviousHunt = this.huntHistory[this.huntHistory.length - 2],
+    lastLosingStrikeHunt;
 
-  if (gameState.status === 'win') {
+  if (gameState.status === "win") {
     if (previousHunt) {
       currentHunt.bankroll = previousHunt.bankroll + gameState.amount;
-    }
-    else {
+    } else {
       currentHunt.bankroll += gameState.amount;
     }
     currentHunt.balance = currentHunt.bankroll - this.startingAmount;
     currentHunt.decision = currentHunt.betArea;
-    currentHunt.result = 'W';
+    currentHunt.result = "W";
 
     // Won Level 1 Strike Bet
-    if (currentHunt.mode === 'T' && currentHunt.betLevel === 1) {
-      this.mode = 'R';
+    if (currentHunt.mode === "T" && currentHunt.betLevel === 1) {
+      this.mode = "R";
       this.betLevel = 1;
-      this.pattern = (currentHunt.pattern === 'S') ? 'O' : 'S';
-      this.betArea = (this.pattern === 'O') ? getOppositeBetArea(currentHunt.decision) : currentHunt.decision;
-    }
+      this.pattern = currentHunt.pattern === "S" ? "O" : "S";
+      this.betArea =
+        this.pattern === "O"
+          ? getOppositeBetArea(currentHunt.decision)
+          : currentHunt.decision;
+    } else if (currentHunt.mode === "T" && currentHunt.betLevel > 1) {
+      // Won Strike Bet over level 1
+      this.mode = "T";
+      this.pattern = currentHunt.pattern === "S" ? "O" : "S";
+      this.betArea =
+        this.pattern === "O"
+          ? getOppositeBetArea(currentHunt.decision)
+          : currentHunt.decision;
 
-    // Won Strike Bet over level 1
-    else if (currentHunt.mode === 'T' && currentHunt.betLevel > 1) {
-      this.mode = 'T';
-      this.pattern = (currentHunt.pattern === 'S') ? 'O' : 'S';
-      this.betArea = (this.pattern === 'O') ? getOppositeBetArea(currentHunt.decision) : currentHunt.decision;
-
-      if (previousHunt.result === 'W' ||
-          (secondPreviousHunt && secondPreviousHunt.result === 'W') ||
-          (currentHunt.balance > -5) ||
-          (currentHunt.balance < 5)
-        ) {
+      if (
+        previousHunt.result === "W" ||
+        (secondPreviousHunt && secondPreviousHunt.result === "W") ||
+        currentHunt.balance > -5 ||
+        currentHunt.balance < 5
+      ) {
         this.betLevel = 1;
-      }
-      else {
+      } else {
         this.betLevel = this.betLevel - 1;
       }
-    }
-
-    // Won Performance Bet
-    else if (currentHunt.mode === 'R') {
-      this.mode = 'R';
+    } else if (currentHunt.mode === "R") {
+      // Won Performance Bet
+      this.mode = "R";
       this.betLevel = this.betLevel + 1;
-      this.pattern = (currentHunt.pattern === 'S') ? 'O' : 'S';
-      this.betArea = (this.pattern === 'O') ? getOppositeBetArea(currentHunt.decision) : currentHunt.decision;
-    }
-
-    // Won Counterstrike Bet
-    else if (currentHunt.mode === 'C') {
-      this.mode = 'T';
+      this.pattern = currentHunt.pattern === "S" ? "O" : "S";
+      this.betArea =
+        this.pattern === "O"
+          ? getOppositeBetArea(currentHunt.decision)
+          : currentHunt.decision;
+    } else if (currentHunt.mode === "C") {
+      // Won Counterstrike Bet
+      this.mode = "T";
 
       if (currentHunt.bankroll < 5 && currentHunt.bankroll > -5) {
         this.betLevel = 1;
-      }
-
-      else {
-        lastLosingStrikeHunt = this.huntHistory[_.findLastIndex(this.huntHistory, {
-          mode: 'T',
-          result: 'L'
-        })];
+      } else {
+        lastLosingStrikeHunt = this.huntHistory[
+          _.findLastIndex(this.huntHistory, {
+            mode: "T",
+            result: "L"
+          })
+        ];
 
         this.betLevel = lastLosingStrikeHunt.betLevel + 1;
       }
 
-      this.pattern = (currentHunt.pattern === 'S') ? 'O' : 'S';
-      this.betArea = (this.pattern === 'O') ? getOppositeBetArea(currentHunt.decision) : currentHunt.decision;
+      this.pattern = currentHunt.pattern === "S" ? "O" : "S";
+      this.betArea =
+        this.pattern === "O"
+          ? getOppositeBetArea(currentHunt.decision)
+          : currentHunt.decision;
     }
-  }
-
-  else if (gameState.status === 'lose') {
+  } else if (gameState.status === "lose") {
     if (previousHunt) {
       currentHunt.bankroll = previousHunt.bankroll - currentHunt.betAmount;
-    }
-    else {
+    } else {
       currentHunt.bankroll = currentHunt.bankroll - currentHunt.betAmount;
     }
     currentHunt.balance = currentHunt.bankroll - this.startingAmount;
     currentHunt.decision = getOppositeBetArea(currentHunt.betArea);
-    currentHunt.result = 'L';
+    currentHunt.result = "L";
 
     // Lost a strike bet but the last one was not a strike bet orr performance bet (so it was counterstrike bet)
-    if (currentHunt.mode === 'T' && ((previousHunt && previousHunt.mode === 'C') || !previousHunt)){
+    if (
+      currentHunt.mode === "T" &&
+      ((previousHunt && previousHunt.mode === "C") || !previousHunt)
+    ) {
       //Raise strike bet and try again
-      this.mode = 'T';
+      this.mode = "T";
       this.betLevel = currentHunt.betLevel + 1;
-      this.pattern = (currentHunt.pattern === 'S') ? 'O' : 'S';
-      this.betArea = (this.pattern === 'O') ? getOppositeBetArea(currentHunt.decision) : currentHunt.decision;
-    }
-
-    // Lost a strike bet and the last one was also a strike bet or performance bet
-    else if (currentHunt.mode === 'T' && (previousHunt && previousHunt.mode === 'T' || previousHunt.mode === 'R')) {
+      this.pattern = currentHunt.pattern === "S" ? "O" : "S";
+      this.betArea =
+        this.pattern === "O"
+          ? getOppositeBetArea(currentHunt.decision)
+          : currentHunt.decision;
+    } else if (
+      currentHunt.mode === "T" &&
+      ((previousHunt && previousHunt.mode === "T") || previousHunt.mode === "R")
+    ) {
+      // Lost a strike bet and the last one was also a strike bet or performance bet
       // Go into level 1 counterstrike betting
-      this.mode = 'C';
+      this.mode = "C";
       this.betLevel = 1;
       this.pattern = currentHunt.pattern;
-      this.betArea = (this.pattern === 'O') ? getOppositeBetArea(currentHunt.decision) : currentHunt.decision;
-    }
-
-    // Lost a counter strike bet
-    else if (currentHunt.mode === 'C') {
+      this.betArea =
+        this.pattern === "O"
+          ? getOppositeBetArea(currentHunt.decision)
+          : currentHunt.decision;
+    } else if (currentHunt.mode === "C") {
+      // Lost a counter strike bet
       //go to next level of counterstrike bet
-      this.mode = 'C';
+      this.mode = "C";
       this.betLevel = currentHunt.betLevel + 1;
       this.pattern = currentHunt.pattern;
-      this.betArea = (this.pattern === 'O') ? getOppositeBetArea(currentHunt.decision) : currentHunt.decision;
-    }
-
-    //Lost a performance bet
-    else if (currentHunt.mode === 'R') {
+      this.betArea =
+        this.pattern === "O"
+          ? getOppositeBetArea(currentHunt.decision)
+          : currentHunt.decision;
+    } else if (currentHunt.mode === "R") {
+      //Lost a performance bet
       // Go to the next highest bet amount strike bet up to level 3
-      this.mode = 'T';
-      this.betLevel = (currentHunt.betLevel <= 2) ? 2 : 3;
-      this.pattern = (currentHunt.pattern === 'S') ? 'O' : 'S';
-      this.betArea = (this.pattern === 'O') ? getOppositeBetArea(currentHunt.decision) : currentHunt.decision;
+      this.mode = "T";
+      this.betLevel = currentHunt.betLevel <= 2 ? 2 : 3;
+      this.pattern = currentHunt.pattern === "S" ? "O" : "S";
+      this.betArea =
+        this.pattern === "O"
+          ? getOppositeBetArea(currentHunt.decision)
+          : currentHunt.decision;
     }
   }
 
@@ -252,65 +268,53 @@ function handleGameEnd (gameState) {
   );
 
   //if goal reached, stop.
-  if (currentHunt.balance >= (1-this.deviation)*this.goal) {
-    this.emit('end', {
-      status: 'win',
+  if (currentHunt.balance >= (1 - this.deviation) * this.goal) {
+    this.emit("end", {
+      status: "win",
       history: this.huntHistory,
       lastState: _.last(this.huntHistory)
     });
-  }
-
-  // You hit the stop-loss.
-  else if (currentHunt.bankroll < -this.stopGap) {
-    this.emit('end', {
-      status: 'lose',
+  } else if (currentHunt.bankroll < -this.stopGap) {
+    // You hit the stop-loss.
+    this.emit("end", {
+      status: "lose",
       history: this.huntHistory,
       lastState: _.last(this.huntHistory)
     });
-  }
-
-  // If the next bet is going to make you go over the stop loss, then stop.
-  else if (currentHunt.bankroll - MODES[this.mode][this.betArea] <= 50) {
-    this.emit('end', {
-      status: 'lose',
+  } else if (currentHunt.bankroll - MODES[this.mode][this.betArea] <= 50) {
+    // If the next bet is going to make you go over the stop loss, then stop.
+    this.emit("end", {
+      status: "lose",
       history: this.huntHistory,
       lastState: _.last(this.huntHistory)
     });
-  }
-
-  // If max-rounds played, stop.
-  else if (currentHunt.round === this.maxRounds) {
-    this.emit('end', {
-      status: 'max-round-reached',
+  } else if (currentHunt.round === this.maxRounds) {
+    // If max-rounds played, stop.
+    this.emit("end", {
+      status: "max-round-reached",
       history: this.huntHistory,
       lastState: _.last(this.huntHistory)
     });
-  }
-
-  //if over 25 rounds are done and you are positive, leave
-  else if (currentHunt.round >= 25 && currentHunt.balance >= 7) {
-    this.emit('end', {
-      status: 'win',
-      history: this.huntHistory,
-      lastState: _.last(this.huntHistory)
-    });
-  }
-
-  //else keep hunting
-  else {
+    // } else if (currentHunt.round >= 25 && currentHunt.balance >= 7) {
+    //   //if over 25 rounds are done and you are positive, leave
+    //   this.emit("end", {
+    //     status: "win",
+    //     history: this.huntHistory,
+    //     lastState: _.last(this.huntHistory)
+    //   });
+  } else {
+    //else keep hunting
     this.hunt();
   }
 }
 
-
-function handleHunterEnd (e) {
+function handleHunterEnd(e) {
   console.log(this.table.toString());
 }
 
-
-function getOppositeBetArea (betArea) {
-  if (betArea === 'P') return 'D';
-  else return 'P';
+function getOppositeBetArea(betArea) {
+  if (betArea === "P") return "D";
+  else return "P";
 }
 
 // extend the EventEmitter class using our Hunter class
