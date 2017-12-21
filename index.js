@@ -4,7 +4,7 @@ var _ = require("underscore");
 var AsciiTable = require("ascii-table");
 var hunterArr = [];
 
-var TOTAL = 200;
+var TOTAL = 10000;
 
 ///-----  SINGLE HUNTER
 
@@ -29,11 +29,11 @@ for (var i = 0; i < TOTAL; i++) {
       pattern: "O",
       betArea: "D",
       betLevel: 1,
-      bankroll: 180,
-      stopGap: 180,
-      goal: 10,
-      deviation: 0.3,
-      maxRounds: 100
+      bankroll: 435,
+      stopGap: 435,
+      goal: 50,
+      deviation: 0,
+      maxRounds: 1000
     });
 
     hunter.on("end", function(e) {
@@ -86,10 +86,10 @@ async.series(hunterArr, function(err, results) {
       "Win %",
       "Lose %",
       "Max Round %",
-      // '% P',
-      // '% D',
-      // '% Win Rolls',
-      // '% Lose Rolls',
+      // "% P",
+      // "% D",
+      // "% Win Rolls",
+      // "% Lose Rolls",
       "Net $$",
       "$/Game"
     );
@@ -99,10 +99,10 @@ async.series(hunterArr, function(err, results) {
       groups["max-round-reached"]
         ? groups["max-round-reached"].length / TOTAL * 100
         : 0,
-      // (100*netP)/(netP+netD),
-      // (100*netD)/(netP+netD),
-      // (100*netWRoll)/(netWRoll+netLRoll),
-      // (100*netLRoll)/(netWRoll+netLRoll),
+      // 100 * netP / (netP + netD),
+      // 100 * netD / (netP + netD),
+      // 100 * netWRoll / (netWRoll + netLRoll),
+      // 100 * netLRoll / (netWRoll + netLRoll),
       netGain,
       netGain / TOTAL
     );
